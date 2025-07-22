@@ -1,0 +1,1220 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>ফিজিক্স ১ম অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        {
+          id: 1,
+          question:
+            "একটি তারের প্রস্থচ্ছেদের ক্ষেত্রফল 1 mm&#xB2; এবং অসহ ভার 40 kg। তারের অসহ পীড়ন-",
+          options: {
+            a: "4 x 10&#x207B;&#x2076; Nm&#x207B;&#x00B2;",
+            b: "3.92 x 10&#x207B;&#x2074; Nm&#x207B;&#x00B2;",
+            c: "3.92 x 10&#x2078; Nm&#x207B;&#x00B2;",
+            d: "4 x 10&#x2077; Nm&#x207B;&#x00B2;",
+          },
+          correct: "c",
+          explanation:
+            "<p>অসহ পীড়ন (Breaking stress) হলো কোনো তারের প্রস্থচ্ছেদের একক ক্ষেত্রফলে যে সর্বোচ্চ বল প্রয়োগ করা যায়, যা তারকে ছিঁড়ে ফেলে।</p><br><p>অসহ পীড়ন = অসহ ভার (বল) / প্রস্থচ্ছেদের ক্ষেত্রফল</p><br><p>প্রথমে, অসহ ভারকে বলে রূপান্তরিত করতে হবে:</p><br><p>অসহ ভার = 40 kg</p><br><p>বল (F) = ভর &#x00D7; অভিকর্ষজ ত্বরণ (g)</p><br><p>g &#x2248; 9.8 m/s&#xB2;</p><br><p>F = 40 kg &#x00D7; 9.8 m/s&#xB2; = 392 N</p><br><p>প্রস্থচ্ছেদের ক্ষেত্রফল (A) = 1 mm&#xB2; = 1 &#x00D7; (10⁻&#xB3; m)&#xB2; = 1 &#x00D7; 10⁻&#x2076; m&#xB2;</p><br><p>অসহ পীড়ন = F / A = 392 N / (1 &#x00D7; 10⁻&#x2076; m&#xB2;)</p><br><p>= 392 &#x00D7; 10&#x2076; Nm⁻&#xB2;</p><br><p>= 3.92 &#x00D7; 10&#x00B2; &#x00D7; 10&#x2076; Nm⁻&#xB2;</p><br><p>= <b>3.92 &#x00D7; 10&#x2078; Nm⁻&#xB2;</b></p>",
+        },
+        {
+          id: 2,
+          question:
+            "একটি তারের অসহ পীড়ন 4.9 x 10&#x2078; Nm&#x207B;&#x00B2; এবং প্রস্থচ্ছেদ 1 x 10&#x207B;&#x2076; m&#xB2; হলে এর অসহ ভার কত?",
+          options: {
+            a: "0.49 N",
+            b: "4.9 N",
+            c: "49 N",
+            d: "490 N",
+          },
+          correct: "d",
+          explanation:
+            "<p>অসহ পীড়ন (Breaking stress) = অসহ ভার (বল) / প্রস্থচ্ছেদের ক্ষেত্রফল</p><br><p>অসহ ভার (F) = অসহ পীড়ন &#x00D7; প্রস্থচ্ছেদের ক্ষেত্রফল (A)</p><br><p>প্রদত্ত মান:</p><br><p>অসহ পীড়ন = 4.9 &#x00D7; 10&#x2078; Nm⁻&#xB2;</p><br><p>প্রস্থচ্ছেদ (A) = 1 &#x00D7; 10⁻&#x2076; m&#xB2;</p><br><p>অসহ ভার (F) = (4.9 &#x00D7; 10&#x2078; Nm⁻&#xB2;) &#x00D7; (1 &#x00D7; 10⁻&#x2076; m&#xB2;)</p><br><p>F = 4.9 &#x00D7; 10&#x2078;⁻&#x2076; N</p><br><p>F = 4.9 &#x00D7; 10&#x00B2; N</p><br><p>F = <b>490 N</b></p>",
+        },
+        {
+          id: 3,
+          question:
+            "4 m দৈর্ঘ্য এবং 30.5 mm ব্যাসের একটি স্টিলের তারের উপর 5 kg ভর প্রয়োগ করলে দৈর্ঘ্য বৃদ্ধি হবে-",
+          options: {
+            a: "1.34 x 10⁻&#x2076; m",
+            b: "4.9 x 10⁻&#x2074; m",
+            c: "4.9 x 10⁻&#x00B3; m",
+            d: "4.9 x 10⁻&#x00B2; m",
+          },
+          correct: "not provided",
+          explanation:
+            "<p>ইয়ং-এর গুণাঙ্ক (Y) এর সূত্র ব্যবহার করে দৈর্ঘ্য বৃদ্ধি (&#x0394;L) নির্ণয় করতে হবে:</p><br><p>Y = (F/A) / (&#x0394;L/L&#x2080;)</p><br><p>যেখানে,</p><br><ul><li>F = প্রয়োগকৃত বল = ভর &#x00D7; g = 5 kg &#x00D7; 9.8 m/s&#xB2; = 49 N</li><li>L&#x2080; = আদি দৈর্ঘ্য = 4 m</li><li>A = প্রস্থচ্ছেদের ক্ষেত্রফল = &#x03C0;r&#xB2; = &#x03C0;(D/2)&#xB2;</li></ul><br><p>ব্যাসার্ধ (r) = ব্যাস (D) / 2 = 30.5 mm / 2 = 15.25 mm = 15.25 &#x00D7; 10⁻&#x00B3; m</p><br><p>A = &#x03C0; &#x00D7; (15.25 &#x00D7; 10⁻&#x00B3; m)&#xB2; &#x2248; 3.14159 &#x00D7; 232.56 &#x00D7; 10⁻&#x2076; m&#xB2; &#x2248; 730.5 &#x00D7; 10⁻&#x2076; m&#xB2; &#x2248; 7.305 &#x00D7; 10⁻&#x00B4; m&#xB2;</p><br><p>স্টিলের ইয়ং-এর গুণাঙ্ক (Y) প্রায় 2 &#x00D7; 10&#x00B9;&#x00B9; Nm⁻&#xB2; (এটি প্রশ্নে দেওয়া উচিত ছিল, তবে সাধারণ মান ব্যবহার করা হচ্ছে)।</p><br><p>&#x0394;L = (F &#x00D7; L&#x2080;) / (A &#x00D7; Y)</p><br><p>&#x0394;L = (49 N &#x00D7; 4 m) / (7.305 &#x00D7; 10⁻&#x00B4; m&#xB2; &#x00D7; 2 &#x00D7; 10&#x00B9;&#x00B9; Nm⁻&#xB2;)</p><br><p>&#x0394;L = 196 / (14.61 &#x00D7; 10&#x2077;)</p><br><p>&#x0394;L &#x2248; 13.41 &#x00D7; 10⁻&#x2077; m</p><br><p>&#x0394;L &#x2248; <b>1.34 &#x00D7; 10⁻&#x2076; m</b></p><br><p>সুতরাং, অপশন (A) সঠিক।</p>",
+        },
+        {
+          id: 4,
+          question:
+            "একটি তারের দৈর্ঘ্য বিকৃতি 0.02 এবং পার্শ্ব বিকৃতি 0.002 হলে এর পয়সনের অনুপাত কত?",
+          options: {
+            a: "0.004",
+            b: "0.1",
+            c: "10",
+            d: "0.0004",
+          },
+          correct: "b",
+          explanation:
+            "<p>পয়সনের অনুপাত (&#x03BD;) হলো স্থিতিস্থাপক সীমার মধ্যে পার্শ্ব বিকৃতি (Lateral strain) এবং দৈর্ঘ্য বিকৃতি (Longitudinal strain) এর অনুপাত (ঋণাত্মক চিহ্ন বাদ দিয়ে, কারণ মান চাওয়া হয়েছে)।</p><br><p>&#x03BD; = পার্শ্ব বিকৃতি / দৈর্ঘ্য বিকৃতি</p><br><p>প্রদত্ত মান:</p><br><p>দৈর্ঘ্য বিকৃতি = 0.02</p><br><p>পার্শ্ব বিকৃতি = 0.002</p><br><p>&#x03BD; = 0.002 / 0.02</p><br><p>&#x03BD; = 2 / 20</p><br><p>&#x03BD; = 1 / 10</p><br><p>&#x03BD; = <b>0.1</b></p>",
+        },
+        {
+          id: 5,
+          question:
+            "1 m দৈর্ঘ্য ও 1 mm&#xB2; প্রস্থচ্ছেদের ক্ষেত্রফল বিশিষ্ট একটি ইস্পাতের তারের দৈর্ঘ্য 10% বৃদ্ধি করতে প্রযুক্ত বল কোনটি? [Y = 2 x 10&#x00B9;&#x00B9; Nm&#x207B;&#x00B2;]",
+          options: {
+            a: "2 x 10&#x2074; N",
+            b: "2 x 10&#x2075; N",
+            c: "2 x 10&#x2076; N",
+            d: "2 x 10&#x2077; N",
+          },
+          correct: "a",
+          explanation:
+            "<p>ইয়ং-এর গুণাঙ্ক (Y) এর সূত্র:</p><br><p>Y = পীড়ন / বিকৃতি = (F/A) / (&#x0394;L/L&#x2080;)</p><br><p>সুতরাং, F = Y &#x00D7; A &#x00D7; (&#x0394;L/L&#x2080;)</p><br><p>প্রদত্ত মান:</p><br><ul><li>L&#x2080; = 1 m</li><li>প্রস্থচ্ছেদের ক্ষেত্রফল (A) = 1 mm&#xB2; = 1 &#x00D7; 10⁻&#x2076; m&#xB2;</li><li>দৈর্ঘ্য বৃদ্ধি (&#x0394;L) = 10% of L&#x2080; = 0.10 &#x00D7; 1 m = 0.1 m</li><li>ইয়ং গুণাঙ্ক (Y) = 2 &#x00D7; 10&#x00B9;&#x00B9; Nm⁻&#xB2;</li></ul><br><p>এখন মানগুলো বসাই:</p><br><p>F = (2 &#x00D7; 10&#x00B9;&#x00B9; Nm⁻&#xB2;) &#x00D7; (1 &#x00D7; 10⁻&#x2076; m&#xB2;) &#x00D7; (0.1 m / 1 m)</p><br><p>F = 2 &#x00D7; 10&#x00B9;&#x00B9; &#x00D7; 10⁻&#x2076; &#x00D7; 0.1 N</p><br><p>F = 2 &#x00D7; 10&#x00B9;&#x00B9;⁻&#x2076; &#x00D7; 10⁻&#x00B9; N</p><br><p>F = 2 &#x00D7; 10&#x2075; &#x00D7; 10⁻&#x00B9; N</p><br><p>F = 2 &#x00D7; 10&#x2074; N</p><br><p>প্রযুক্ত বল <b>2 &#x00D7; 10&#x2074; N</b>।</p>",
+        },
+        {
+          id: 6,
+          question:
+            "1 x 10⁻&#x2074; m&#xB2; প্রস্থচ্ছেদের ক্ষেত্রফল বিশিষ্ট ইস্পাতের তারে কত বল প্রয়োগ করলে এর দৈর্ঘ্য দ্বিগুণ হবে? [Y = 2 x 10&#x00B9;&#x00B9; Nm&#x207B;&#x00B2;]",
+          options: {
+            a: "2 x 10&#x2076; N",
+            b: "2 x 10&#x2077; N",
+            c: "2 x 10&#x2078; N",
+            d: "2 x 10&#x00B9;&#x2070; N",
+          },
+          correct: "b",
+          explanation:
+            "<p>ইয়ং-এর গুণাঙ্ক (Y) এর সূত্র:</p><br><p>Y = পীড়ন / বিকৃতি = (F/A) / (&#x0394;L/L&#x2080;)</p><br><p>যেখানে,</p><br><ul><li>F = প্রযুক্ত বল</li><li>A = প্রস্থচ্ছেদের ক্ষেত্রফল = 1 &#x00D7; 10⁻&#x2074; m&#xB2;</li><li>&#x0394;L = দৈর্ঘ্য বৃদ্ধি</li><li>L&#x2080; = আদি দৈর্ঘ্য</li><li>Y = ইয়ং গুণাঙ্ক = 2 &#x00D7; 10&#x00B9;&#x00B9; Nm⁻&#xB2;</li></ul><br><p>প্রশ্নমতে, দৈর্ঘ্য দ্বিগুণ হবে, অর্থাৎ &#x0394;L = L&#x2080;।</p><br><p>তাহলে, বিকৃতি (&#x0394;L/L&#x2080;) = L&#x2080;/L&#x2080; = 1</p><br><p>এখন, F = Y &#x00D7; A &#x00D7; (&#x0394;L/L&#x2080;)</p><br><p>F = (2 &#x00D7; 10&#x00B9;&#x00B9; Nm⁻&#xB2;) &#x00D7; (1 &#x00D7; 10⁻&#x2074; m&#xB2;) &#x00D7; 1</p><br><p>F = 2 &#x00D7; 10&#x00B9;&#x00B9;⁻&#x2074; N</p><br><p>F = <b>2 &#x00D7; 10&#x2077; N</b></p>",
+        },
+        {
+          id: 7,
+          question:
+            "10 m দৈর্ঘ্যের একটি তারে বল প্রয়োগের ফলে দৈর্ঘ্য হলো 10.5 m। দৈর্ঘ্য বিকৃতি কত হবে?",
+          options: {
+            a: "20",
+            b: "10.5",
+            c: "10",
+            d: "0.05",
+          },
+          correct: "d",
+          explanation:
+            "<p>দৈর্ঘ্য বিকৃতি (Longitudinal strain) হলো দৈর্ঘ্যের পরিবর্তন এবং আদি দৈর্ঘ্যের অনুপাত।</p><br><p>আদি দৈর্ঘ্য (L&#x2080;) = 10 m</p><br><p>শেষ দৈর্ঘ্য (L) = 10.5 m</p><br><p>দৈর্ঘ্যের পরিবর্তন (&#x0394;L) = L - L&#x2080; = 10.5 m - 10 m = 0.5 m</p><br><p>দৈর্ঘ্য বিকৃতি = &#x0394;L / L&#x2080;</p><br><p>= 0.5 m / 10 m</p><br><p>= <b>0.05</b></p>",
+        },
+        {
+          id: 8,
+          question:
+            "1 m দীর্ঘ একটি তারে 10&#x2075; Nm&#x207B;&#x00B2; বল প্রয়োগে এর দৈর্ঘ্য বৃদ্ধি পেল 0.001 m। তারটির ইয়ং গুণাঙ্ক কত?",
+          options: {
+            a: "10⁻&#x2077; Nm&#x207B;&#x00B2;",
+            b: "10&#x00B3; Nm&#x207B;&#x00B2;",
+            c: "10&#x2077; Nm&#x207B;&#x00B2;",
+            d: "10&#x2078; Nm&#x207B;&#x00B2;",
+          },
+          correct: "d",
+          explanation:
+            "<p>এখানে প্রশ্নটিতে 'বল প্রয়োগে 10&#x2075; Nm⁻&#xB2;' উল্লেখ করা হয়েছে, যা আসলে পীড়নের একক। তাই ধরে নিচ্ছি এটি 'পীড়ন' (Stress) বোঝানো হয়েছে, F/A।</p><br><p>ইয়ং-এর গুণাঙ্ক (Y) = পীড়ন / বিকৃতি</p><br><p>পীড়ন = 10&#x2075; Nm⁻&#xB2;</p><br><p>দৈর্ঘ্য বিকৃতি = &#x0394;L / L&#x2080;</p><br><ul><li>আদি দৈর্ঘ্য (L&#x2080;) = 1 m</li><li>দৈর্ঘ্য বৃদ্ধি (&#x0394;L) = 0.001 m = 1 &#x00D7; 10⁻&#x00B3; m</li></ul><br><p>দৈর্ঘ্য বিকৃতি = (1 &#x00D7; 10⁻&#x00B3; m) / 1 m = 1 &#x00D7; 10⁻&#x00B3;</p><br><p>Y = (10&#x2075; Nm⁻&#xB2;) / (1 &#x00D7; 10⁻&#x00B3;)</p><br><p>Y = 10&#x2075; &#x00D7; 10&#x00B3; Nm⁻&#xB2;</p><br><p>Y = <b>10&#x2078; Nm⁻&#xB2;</b></p>",
+        },
+        {
+          id: 9,
+          question:
+            "10&#x2078; Nm&#x207B;&#x00B2; পীড়ন প্রয়োগে 1 m দীর্ঘ একটি তারের দৈর্ঘ্য বৃদ্ধি পেল 10⁻&#x00B3; m। তারটির ইয়ং গুণাঙ্ক কত?",
+          options: {
+            a: "10&#x2075; Nm&#x207B;&#x00B2;",
+            b: "10⁻&#x00B9;&#x00B9; Nm&#x207B;&#x00B2;",
+            c: "10&#x00B9;&#x00B9; Nm&#x207B;&#x00B2;",
+            d: "10⁻&#x2075; Nm&#x207B;&#x00B2;",
+          },
+          correct: "c",
+          explanation:
+            "<p>ইয়ং-এর গুণাঙ্ক (Y) = পীড়ন / বিকৃতি</p><br><p>প্রদত্ত মান:</p><br><ul><li>পীড়ন = 10&#x2078; Nm⁻&#xB2;</li><li>আদি দৈর্ঘ্য (L&#x2080;) = 1 m</li><li>দৈর্ঘ্য বৃদ্ধি (&#x0394;L) = 10⁻&#x00B3; m</li></ul><br><p>দৈর্ঘ্য বিকৃতি = &#x0394;L / L&#x2080; = (10⁻&#x00B3; m) / 1 m = 10⁻&#x00B3;</p><br><p>এখন ইয়ং গুণাঙ্ক নির্ণয় করি:</p><br><p>Y = (10&#x2078; Nm⁻&#xB2;) / (10⁻&#x00B3;)</p><br><p>Y = 10&#x2078; &#x00D7; 10&#x00B3; Nm⁻&#xB2;</p><br><p>Y = <b>10&#x00B9;&#x00B9; Nm⁻&#xB2;</b></p>",
+        },
+        {
+          id: 10,
+          question:
+            "একই উপাদানের তৈরি ২য় তারের দৈর্ঘ্য ১ম তারের দৈর্ঘ্যের দ্বিগুণ কিন্তু ব্যাসার্ধ ১ম তারের অর্ধেক হলে ও সমান ভার প্রয়োগ করলে তার ও ১ম তারের দৈর্ঘ্য প্রসারণের অনুপাত কত?",
+          options: {
+            a: "same",
+            b: "2",
+            c: "4",
+            d: "8",
+          },
+          correct: "d",
+          explanation:
+            "<p>ইয়ং-এর গুণাঙ্ক (Y) এর সূত্র থেকে আমরা জানি:</p><br><p>Y = (F/A) / (&#x0394;L/L&#x2080;)</p><br><p>বা, &#x0394;L = (F &#x00D7; L&#x2080;) / (Y &#x00D7; A)</p><br><p>যেহেতু A = &#x03C0;r&#xB2;, তাহলে &#x0394;L = (F &#x00D7; L&#x2080;) / (Y &#x00D7; &#x03C0;r&#xB2;)</p><br><p>যেহেতু উভয় তার একই উপাদানের তৈরি এবং সমান ভার প্রয়োগ করা হয়, তাই F এবং Y উভয় তারের জন্য একই। &#x03C0; একটি ধ্রুবক।</p><br><p>অতএব, &#x0394;L &#x221D; L&#x2080; / r&#xB2;</p><br><p>ধরি, ১ম তারের দৈর্ঘ্য L&#x2081; এবং ব্যাসার্ধ r&#x2081;। এর দৈর্ঘ্য প্রসারণ &#x0394;L&#x2081;।</p><br><p>&#x0394;L&#x2081; &#x221D; L&#x2081; / r&#x2081;&#xB2;</p><br><p>২য় তারের দৈর্ঘ্য L&#x2082; = 2L&#x2081; এবং ব্যাসার্ধ r&#x2082; = r&#x2081;/2। এর দৈর্ঘ্য প্রসারণ &#x0394;L&#x2082;।</p><br><p>&#x0394;L&#x2082; &#x221D; L&#x2082; / r&#x2082;&#xB2;</p><br><p>&#x0394;L&#x2082; &#x221D; (2L&#x2081;) / (r&#x2081;/2)&#xB2;</p><br><p>&#x0394;L&#x2082; &#x221D; (2L&#x2081;) / (r&#x2081;&#xB2; / 4)</p><br><p>&#x0394;L&#x2082; &#x221D; 8 &#x00D7; (L&#x2081; / r&#x2081;&#xB2;)</p><br><p>সুতরাং, &#x0394;L&#x2082; = 8 &#x00D7; &#x0394;L&#x2081;</p><br><p>তাহলে, ২য় তার ও ১ম তারের দৈর্ঘ্য প্রসারণের অনুপাত &#x0394;L&#x2082; / &#x0394;L&#x2081; = <b>8</b></p>",
+        },
+        {
+          id: 11,
+          question:
+            "1 m দীর্ঘ একটি তারের দৈর্ঘ্য 0.01 m বৃদ্ধি পেলে তারটির অনুদৈর্ঘ্য বিকৃতি হবে-",
+          options: {
+            a: "10",
+            b: "1",
+            c: "0.01",
+            d: "0.001",
+          },
+          correct: "c",
+          explanation:
+            "<p>অনুদৈর্ঘ্য বিকৃতি (Longitudinal strain) হলো দৈর্ঘ্যের পরিবর্তন এবং আদি দৈর্ঘ্যের অনুপাত।</p><br><p>আদি দৈর্ঘ্য (L&#x2080;) = 1 m</p><br><p>দৈর্ঘ্য বৃদ্ধি (&#x0394;L) = 0.01 m</p><br><p>অনুদৈর্ঘ্য বিকৃতি = &#x0394;L / L&#x2080;</p><br><p>= 0.01 m / 1 m</p><br><p>= <b>0.01</b></p>",
+        },
+        {
+          id: 12,
+          question:
+            "একটি তারের 0.01 cm&#xB2; ক্ষেত্রফলের উপর 2 x 10&#x00B9; N বল প্রয়োগ করা হলে তারের উপর প্রযুক্ত পীড়ন কত?",
+          options: {
+            a: "2 x 10&#x2078; Nm&#x207B;&#x00B2;",
+            b: "2 x 10&#x2070; Nm&#x207B;&#x00B2;",
+            c: "2 x 10&#x00B9;&#x2070; Nm&#x207B;&#x00B2;",
+            d: "2 x 10&#x00B9;&#x00B2; Nm&#x207B;&#x00B2;",
+          },
+          correct: "c",
+          explanation:
+            "<p>পীড়ন (Stress) = বল (F) / প্রস্থচ্ছেদের ক্ষেত্রফল (A)</p><br><p>প্রদত্ত মান:</p><br><ul><li>বল (F) = 2 &#x00D7; 10&#x00B9; N = 20 N</li><li>প্রস্থচ্ছেদের ক্ষেত্রফল (A) = 0.01 cm&#xB2;</li></ul><br><p>ক্ষেত্রফলকে m&#xB2; এ রূপান্তর করতে হবে:</p><br><p>1 cm = 10⁻&#x00B2; m</p><br><p>1 cm&#xB2; = (10⁻&#x00B2; m)&#xB2; = 10⁻&#x2074; m&#xB2;</p><br><p>A = 0.01 &#x00D7; 10⁻&#x2074; m&#xB2; = 1 &#x00D7; 10⁻&#x00B2; &#x00D7; 10⁻&#x2074; m&#xB2; = 1 &#x00D7; 10⁻&#x2076; m&#xB2;</p><br><p>এখন পীড়ন নির্ণয় করি:</p><br><p>পীড়ন = 20 N / (1 &#x00D7; 10⁻&#x2076; m&#xB2;)</p><br><p>= 20 &#x00D7; 10&#x2076; Nm⁻&#xB2;</p><br><p>= 2 &#x00D7; 10&#x00B9; &#x00D7; 10&#x2076; Nm⁻&#xB2;</p><br><p>= <b>2 &#x00D7; 10&#x2077; Nm⁻&#xB2;</b></p><br><p>এখানে অপশন (C) তে 2 x 10&#x00B9;&#x2070; Nm⁻&#xB2; দেওয়া আছে, যা আমার হিসাবের সাথে মেলে না। আমার হিসাব অনুযায়ী 2 &#x00D7; 10&#x2077; Nm⁻&#xB2; হওয়া উচিত। সম্ভবত প্রশ্নে প্রদত্ত 2 &#x00D7; 10&#x00B9; N এর পরিবর্তে 2 &#x00D7; 10&#x00B4; N বা 2 &#x00D7; 10&#x00B6; N হতে পারে।</p><br><p>যদি প্রশ্নটি 2 &#x00D7; 10&#x00B4; N হত, তাহলে পীড়ন = (2 &#x00D7; 10&#x00B4;) / (1 &#x00D7; 10⁻&#x2076;) = 2 &#x00D7; 10&#x00B9;&#x2070; Nm⁻&#xB2; হতো।</p><br><p>প্রদত্ত উত্তর (C) এর সাথে মেলানোর জন্য ধরে নিতে হবে, প্রয়োগকৃত বল F = 2 &#x00D7; 10&#x00B4; N.</p>",
+        },
+        {
+          id: 13,
+          question:
+            "1 বর্গ সে.মি. প্রস্থচ্ছেদবিশিষ্ট একটি তারে কত বল প্রয়োগ করা হলে এর দৈর্ঘ্য বৃদ্ধি আদি দৈর্ঘ্যের সমান হবে? [Y = 2 x 10&#x00B9;&#x00B9; N/m&#xB2;]",
+          options: {
+            a: "2 x 10&#x2077; N",
+            b: "4 x 10&#x2077; N",
+            c: "2 x 10&#x2075; N",
+            d: "4 x 10&#x2075; N",
+          },
+          correct: "a",
+          explanation:
+            "<p>ইয়ং-এর গুণাঙ্ক (Y) এর সূত্র:</p><br><p>Y = পীড়ন / বিকৃতি = (F/A) / (&#x0394;L/L&#x2080;)</p><br><p>সুতরাং, F = Y &#x00D7; A &#x00D7; (&#x0394;L/L&#x2080;)</p><br><p>প্রদত্ত মান:</p><br><ul><li>প্রস্থচ্ছেদের ক্ষেত্রফল (A) = 1 বর্গ সে.মি. = 1 cm&#xB2; = 1 &#x00D7; 10⁻&#x2074; m&#xB2;</li><li>দৈর্ঘ্য বৃদ্ধি আদি দৈর্ঘ্যের সমান হবে, অর্থাৎ &#x0394;L = L&#x2080;।</li><li>সুতরাং, বিকৃতি (&#x0394;L/L&#x2080;) = 1</li><li>ইয়ং গুণাঙ্ক (Y) = 2 &#x00D7; 10&#x00B9;&#x00B9; N/m&#xB2;</li></ul><br><p>এখন মানগুলো বসাই:</p><br><p>F = (2 &#x00D7; 10&#x00B9;&#x00B9; N/m&#xB2;) &#x00D7; (1 &#x00D7; 10⁻&#x2074; m&#xB2;) &#x00D7; 1</p><br><p>F = 2 &#x00D7; 10&#x00B9;&#x00B9;⁻&#x2074; N</p><br><p>F = <b>2 &#x00D7; 10&#x2077; N</b></p>",
+        },
+        {
+          id: 14,
+          question:
+            "একটি তারে 0.01 দৈর্ঘ্য বিকৃতিতে পার্শ্ব বিকৃতি 0.0024 হলে, তারের উপাদানের পয়সনের অনুপাত কত?",
+          options: {
+            a: "0.024",
+            b: "0.24",
+            c: "0.42",
+            d: "2.40",
+          },
+          correct: "b",
+          explanation:
+            "<p>পয়সনের অনুপাত (&#x03BD;) হলো পার্শ্ব বিকৃতি (Lateral strain) এবং দৈর্ঘ্য বিকৃতি (Longitudinal strain) এর অনুপাত।</p><br><p>&#x03BD; = পার্শ্ব বিকৃতি / দৈর্ঘ্য বিকৃতি</p><br><p>প্রদত্ত মান:</p><br><ul><li>দৈর্ঘ্য বিকৃতি = 0.01</li><li>পার্শ্ব বিকৃতি = 0.0024</li></ul><br><p>&#x03BD; = 0.0024 / 0.01</p><br><p>&#x03BD; = 24 / 1000</p><br><p>&#x03BD; = <b>0.24</b></p>",
+        },
+        {
+          id: 15,
+          question:
+            "50 m উঁচু থেকে পড়ন্ত দুটি শিলাপিণ্ডের ব্যাসার্ধের অনুপাত 1 : 2। শিলাখণ্ড দুটির অন্তঃবেগের অনুপাত কত?",
+          options: {
+            a: "1:9",
+            b: "9:1",
+            c: "4:1",
+            d: "1:4",
+          },
+          correct: "d",
+          explanation:
+            "<p>অন্তঃবেগ বা প্রান্তিক বেগ (Terminal velocity, v&#x209C;) এর সূত্র হলো:</p><br><p>v&#x209C; = [2r&#xB2;(&#x03C1; - &#x03C3;)g] / (9&#x03B7;)</p><br><ul><li>যেখানে r = বস্তুর ব্যাসার্ধ</li><li>&#x03C1; = বস্তুর ঘনত্ব</li><li>&#x03C3; = মাধ্যমের ঘনত্ব</li><li>g = অভিকর্ষজ ত্বরণ</li><li>&#x03B7; = মাধ্যমের সান্দ্রতা গুণাঙ্ক</li></ul><br><p>যেহেতু শিলাপিণ্ড দুটি একই উপাদান দিয়ে তৈরি (একই ঘনত্ব &#x03C1;), একই মাধ্যমে পড়ছে (একই &#x03C3; এবং &#x03B7;), এবং g ধ্রুবক, তাই প্রান্তিক বেগ শুধু ব্যাসার্ধের বর্গের উপর নির্ভরশীল:</p><br><p>v&#x209C; &#x221D; r&#xB2;</p><br><p>প্রথম শিলাপিণ্ডের ব্যাসার্ধ r&#x2081; এবং দ্বিতীয় শিলাপিণ্ডের ব্যাসার্ধ r&#x2082;।</p><br><p>প্রদত্ত, r&#x2081; : r&#x2082; = 1 : 2</p><br><p>তাহলে, v&#x209C;&#x2081; : v&#x209C;&#x2082; = r&#x2081;&#xB2; : r&#x2082;&#xB2;</p><br><p>= 1&#xB2; : 2&#xB2;</p><br><p>= 1 : 4</p><br><p>শিলাখণ্ড দুটির অন্তঃবেগের অনুপাত <b>1 : 4</b>। উচ্চতা 50 m এখানে অপ্রাসঙ্গিক, কারণ প্রান্তিক বেগ অর্জিত হওয়ার পর সেটি উচ্চতার উপর নির্ভরশীল নয়।</p>",
+        },
+        {
+          id: 16,
+          question:
+            "কোনো সান্দ্র প্রবাহীতে M ভরের সীসার গোলকের অন্ত্যবেগ v। 64 M ভরের অন্য একটি সীসার গোলকের এই প্রবাহীতে অন্ত্যবেগ কত হবে?",
+          options: {
+            a: "V",
+            b: "4V",
+            c: "8V",
+            d: "16V",
+          },
+          correct: "d",
+          explanation:
+            "<p>প্রান্তিক বেগ (v) এর সূত্র হলো: v = [2r&#xB2;(&#x03C1; - &#x03C3;)g] / (9&#x03B7;)</p><br><p>এখানে, v &#x221D; r&#xB2;</p><br><p>বস্তুর ভর (M) = ঘনত্ব (&#x03C1;) &#x00D7; আয়তন (V)</p><br><p>একটি গোলকের আয়তন V = (4/3)&#x03C0;r&#x00B3;</p><br><p>তাহলে, M &#x221D; r&#x00B3; (যেহেতু &#x03C1; স্থির, কারণ দুটিই সীসার গোলক)</p><br><p>বা, r &#x221D; M&#x00B9;&#x207D;</p><br><p>এখন, প্রান্তিক বেগের সূত্রে r এর মান বসাই:</p><br><p>v &#x221D; (M&#x00B9;&#x207D;)&#xB2;</p><br><p>v &#x221D; M&#x00B2;&#x207D;</p><br><p>যদি প্রথম গোলকের ভর M&#x2081; = M এবং অন্ত্যবেগ v&#x2081; = v হয়।</p><br><p>দ্বিতীয় গোলকের ভর M&#x2082; = 64M।</p><br><p>তাহলে, v&#x2082; / v&#x2081; = (M&#x2082; / M&#x2081;)&#x00B2;&#x207D;</p><br><p>v&#x2082; / v = (64M / M)&#x00B2;&#x207D;</p><br><p>v&#x2082; / v = (64)&#x00B2;&#x207D;</p><br><p>v&#x2082; / v = ( (4&#x00B3;) )&#x00B2;&#x207D;</p><br><p>v&#x2082; / v = 4&#x00B2;</p><br><p>v&#x2082; / v = 16</p><br><p>v&#x2082; = <b>16V</b></p>",
+        },
+        {
+          id: 17,
+          question:
+            "একই ধাতুর তৈরি দুটি গোলক যাদের একটির ব্যাসার্ধ অন্যটির দ্বিগুণ। গোলক দুটিকে তরল পদার্থের পূর্ণ একটি লম্বা জারের ভেতর দিয়ে পড়তে দেয়া হলে, ছোটটির তুলনায় বড়টির টার্মিনাল গতি-",
+          options: {
+            a: "একই হবে",
+            b: "দ্বিগুণ হবে",
+            c: "চারগুণ হবে",
+            d: "অর্ধেক হবে",
+          },
+          correct: "c",
+          explanation:
+            "<p>টার্মিনাল গতি বা প্রান্তিক বেগ (v&#x209C;) এর সূত্র হলো:</p><br><p>v&#x209C; = [2r&#xB2;(&#x03C1; - &#x03C3;)g] / (9&#x03B7;)</p><br><p>যেহেতু গোলক দুটি একই ধাতুর তৈরি (অর্থাৎ একই ঘনত্ব &#x03C1;), একই তরল মাধ্যমে পড়ছে (অর্থাৎ একই &#x03C3; এবং &#x03B7;), এবং g ধ্রুবক, তাই প্রান্তিক বেগ শুধু ব্যাসার্ধের বর্গের উপর নির্ভরশীল:</p><br><p>v&#x209C; &#x221D; r&#xB2;</p><br><p>ধরি, ছোট গোলকের ব্যাসার্ধ r&#x2081;।</p><br><p>তাহলে বড় গোলকের ব্যাসার্ধ r&#x2082; = 2r&#x2081;।</p><br><p>ছোটটির টার্মিনাল গতি v&#x209C;&#x2081; &#x221D; r&#x2081;&#xB2;</p><br><p>বড়টির টার্মিনাল গতি v&#x209C;&#x2082; &#x221D; r&#x2082;&#xB2; = (2r&#x2081;)&#xB2; = 4r&#x2081;&#xB2;</p><br><p>সুতরাং, v&#x209C;&#x2082; = 4 &#x00D7; v&#x209C;&#x2081;</p><br><p>অর্থাৎ, বড়টির টার্মিনাল গতি ছোটটির তুলনায় <b>চারগুণ হবে</b>।</p>",
+        },
+        {
+          id: 18,
+          question:
+            "100 g ভরের একটি বস্তু পানির মধ্যে পড়ায় তার ওপর ক্রিয়ারত প্লবতা 0.981 N হলে সান্দ্র বল হবে-",
+          options: {
+            a: "9.81 N",
+            b: "0.981 N",
+            c: "1.962 N",
+            d: "0 N",
+          },
+          correct: "d",
+          explanation:
+            "<p>এই প্রশ্নটি কিছুটা বিভ্রান্তিকর। যদি বস্তুটি পানির মধ্যে <b>পড়ে</b> এবং কোনো অতিরিক্ত তথ্য (যেমন প্রান্তিক বেগ অর্জন করেছে কি না) দেওয়া না থাকে, তাহলে সান্দ্র বলের মান নির্ণয় করা সম্ভব নয়, কারণ এটি বেগের উপর নির্ভরশীল। তবে, অপশন (D) 0 N দেওয়া আছে, যা একটি বিশেষ শর্তে সম্ভব।</p><br><p>যদি বস্তুটি পানিতে <b>স্থির অবস্থায় থাকে</b> বা <b>প্রান্তিক বেগ অর্জন করে স্থির অবস্থায় আসে</b>, তাহলে নিট বল শূন্য হবে।</p><br><p>বস্তুর ওজন (নিম্নমুখী বল) = ভর &#x00D7; g = 100 g &#x00D7; 9.8 m/s&#xB2; = 0.1 kg &#x00D7; 9.8 m/s&#xB2; = 0.98 N</p><br><p>প্লবতা (ঊর্ধ্বমুখী বল) = 0.981 N (প্রায় বস্তুর ওজনের সমান)।</p><br><p>যদি বস্তুটি <b>স্থির অবস্থায় থাকে</b> (অর্থাৎ ডুবন্ত বা ভাসমান), তাহলে প্লবতা এবং ওজন একে অপরকে বাতিল করে। তখন সান্দ্র বল 0 N।</p><br><p>যদি বস্তুটি <b>সমবেগে গতিশীল হয়</b> (প্রান্তিক বেগ), তাহলে নিট বল শূন্য হয়। এই অবস্থায়:</p><br><p>ওজন = প্লবতা + সান্দ্র বল</p><br><p>0.98 N = 0.981 N + সান্দ্র বল</p><br><p>সান্দ্র বল = 0.98 N - 0.981 N = -0.001 N (যা প্রায় শূন্য)</p><br><p>সুতরাং, যদি ধরে নেওয়া হয় যে বস্তুটি স্থির অবস্থায় আছে বা প্রান্তিক বেগ অর্জন করেছে যেখানে এটি প্রায় নিট শূন্য বল অনুভব করছে, তবে <b>সান্দ্র বল প্রায় 0 N হবে</b>।</p>",
+        },
+        {
+          id: 19,
+          question:
+            "প্রতিটি 10⁻&#x2074; m ব্যাসবিশিষ্ট পানির 1000 টি ক্ষুদ্র ফোঁটা মিলে একটি বৃহৎ ফোটা তৈরি করল। বৃহৎ ফোঁটার ব্যাসার্ধ কত?",
+          options: {
+            a: "5 x 10⁻&#x2074; m",
+            b: "1/10 m",
+            c: "10⁻&#x00B2; m",
+            d: "10 x 10⁻&#x2074; m",
+          },
+          correct: "a",
+          explanation:
+            "<p>ক্ষুদ্র ফোঁটাগুলোর মোট আয়তন বৃহৎ ফোঁটার আয়তনের সমান হবে (আয়তনের সংরক্ষণশীলতা নীতি)।</p><br><p>ক্ষুদ্র ফোঁটার ব্যাস (d) = 10⁻&#x2074; m</p><br><p>ক্ষুদ্র ফোঁটার ব্যাসার্ধ (r) = d/2 = (10⁻&#x2074; / 2) m = 0.5 &#x00D7; 10⁻&#x2074; m = 5 &#x00D7; 10⁻&#x2075; m</p><br><p>একটি ক্ষুদ্র ফোঁটার আয়তন (v) = (4/3)&#x03C0;r&#x00B3; = (4/3)&#x03C0; &#x00D7; (5 &#x00D7; 10⁻&#x2075;)&#x00B3; m&#x00B3;</p><br><p>= (4/3)&#x03C0; &#x00D7; 125 &#x00D7; 10⁻&#x00B9;&#x2075; m&#x00B3;</p><br><p>1000 টি ক্ষুদ্র ফোঁটার মোট আয়তন (V_total) = 1000 &#x00D7; v</p><br><p>= 10&#x00B3; &#x00D7; (4/3)&#x03C0; &#x00D7; 125 &#x00D7; 10⁻&#x00B9;&#x2075; m&#x00B3;</p><br><p>= (4/3)&#x03C0; &#x00D7; 125 &#x00D7; 10&#x00B3; &#x00D7; 10⁻&#x00B9;&#x2075; m&#x00B3;</p><br><p>= (4/3)&#x03C0; &#x00D7; 125 &#x00D7; 10⁻&#x00B9;&#x00B2; m&#x00B3;</p><br><p>ধরি, বৃহৎ ফোঁটার ব্যাসার্ধ R।</p><br><p>বৃহৎ ফোঁটার আয়তন (V_big) = (4/3)&#x03C0;R&#x00B3;</p><br><p>এখন, V_big = V_total</p><br><p>(4/3)&#x03C0;R&#x00B3; = (4/3)&#x03C0; &#x00D7; 125 &#x00D7; 10⁻&#x00B9;&#x00B2;</p><br><p>R&#x00B3; = 125 &#x00D7; 10⁻&#x00B9;&#x00B2;</p><br><p>R = (125 &#x00D7; 10⁻&#x00B9;&#x00B2;)&#x00B9;&#x207D;</p><br><p>R = 5 &#x00D7; 10⁻&#x2074; m</p><br><p>বৃহৎ ফোঁটার ব্যাসার্ধ <b>5 &#x00D7; 10⁻&#x2074; m</b>।</p>",
+        },
+        {
+          id: 20,
+          question:
+            "পানির উপরিতল হতে 0.5 m লম্বা একটি অনুভূমিক তারকে টেনে তুলতে তারের ওজনসহ সর্বাধিক 72.8 x 10⁻&#x00B3; N বলের প্রয়োজন হয়। পানির পৃষ্ঠটান কত?",
+          options: {
+            a: "145.6 x 10⁻&#x00B3; Nm&#x207B;&#x00B9;",
+            b: "72.8 x 10⁻&#x00B3; Nm&#x207B;&#x00B9;",
+            c: "14.56 x 10⁻&#x00B3; Nm&#x207B;&#x00B9;",
+            d: "7.28 x 10⁻&#x00B3; Nm&#x207B;&#x00B9;",
+          },
+          correct: "b",
+          explanation:
+            "<p>যখন একটি তারকে তরলের পৃষ্ঠ থেকে টেনে তোলা হয়, তখন তারের ওজন ছাড়াও পৃষ্ঠটানের কারণে একটি বল অনুভব হয়। পৃষ্ঠটান (T) হলো একক দৈর্ঘ্যের পৃষ্ঠ বরাবর ক্রিয়াশীল বল।</p><br><p>পৃষ্ঠটানজনিত বল (F_surface) = T &#x00D7; (তারের দৈর্ঘ্য)</p><br><p>তবে, একটি অনুভূমিক তারকে তরলের পৃষ্ঠ থেকে তোলার সময়, তরলটি তারের দুই পাশ থেকে স্পর্শ করে। তাই কার্যকর দৈর্ঘ্য তারের দৈর্ঘ্যের দ্বিগুণ হয়।</p><br><p>F_surface = T &#x00D7; (2L)</p><br><p>এখানে, তারের ওজনসহ সর্বাধিক বল 72.8 &#x00D7; 10⁻&#x00B3; N। এই বলটি পৃষ্ঠটানজনিত বল এবং তারের ওজনের সমষ্টি।</p><br><p>প্রয়োগকৃত মোট বল = তারের ওজন + পৃষ্ঠটানজনিত বল</p><br><p>যদি ধরে নেওয়া হয় যে, তারের ওজন নগণ্য বা প্রদত্ত বলটিই কেবলমাত্র পৃষ্ঠটানজনিত বল, অথবা প্রশ্নটি সরাসরি পৃষ্ঠটানজনিত বলের কথাই বলছে। সাধারণত, যখন পৃষ্ঠ থেকে কিছু তোলা হয়, তখন পৃষ্ঠটানের কারণেই প্রধানত এই বলের প্রয়োজন হয়।</p><br><p>তাহলে, F_total = T &#x00D7; 2L</p><br><p>72.8 &#x00D7; 10⁻&#x00B3; N = T &#x00D7; (2 &#x00D7; 0.5 m)</p><br><p>72.8 &#x00D7; 10⁻&#x00B3; N = T &#x00D7; 1 m</p><br><p>T = <b>72.8 &#x00D7; 10⁻&#x00B3; Nm⁻&#x00B9;</b></p><br><p>উল্লেখ্য: যদি তারের ওজন আলাদাভাবে দেওয়া থাকত, তবে তাকে মোট বল থেকে বাদ দিয়ে শুধু পৃষ্ঠটানজনিত বল গণনা করা হতো। কিন্তু এখানে 'তারের ওজনসহ সর্বাধিক' বলা হয়েছে এবং একটিই মান দেওয়া হয়েছে, যা প্রায় পানির পৃষ্ঠটানের সাধারণ মানের সাথে সামঞ্জস্যপূর্ণ।</p>",
+        },
+        {
+          id: 21,
+          question: "পানির পৃষ্ঠটান 0.06 N/m হলে তার পৃষ্ঠশক্তি-",
+          options: {
+            a: "60 N/m",
+            b: "6 N/m",
+            c: "0.6 N/m",
+            d: "0.06 N/m",
+          },
+          correct: "d",
+          explanation:
+            "<p>পৃষ্ঠটান (T) এবং পৃষ্ঠশক্তি (E) সংখ্যাগতভাবে সমান।</p><br><p>পৃষ্ঠটানের একক হলো N/m (নিউটন প্রতি মিটার)।</p><br><p>পৃষ্ঠশক্তির একক হলো J/m&#xB2; (জুল প্রতি বর্গমিটার)।</p><br><p>যেহেতু 1 J = 1 Nm, তাই 1 J/m&#xB2; = 1 Nm/m&#xB2; = 1 N/m।</p><br><p>অতএব, যদি পানির পৃষ্ঠটান 0.06 N/m হয়, তাহলে তার পৃষ্ঠশক্তিও <b>0.06 N/m</b> (বা 0.06 J/m&#xB2;) হবে।</p>",
+        },
+      ];
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+                                                                <label class="option" data-option="${option}">
+                                                                  <div class="circle">${option}</div>
+                                                                  <span class="option-text">${question.options[option]}</span>
+                                                                </label>
+                                                              `;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                                                                   <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                                                                   <div class="explanation-content">
+                                                                     <div class="explanation-label">ব্যাখ্যা:</div>
+                                                                     ${question.explanation}
+                                                                   </div>
+                                                                 </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+                                                              <p class="question-label">${
+                                                                index + 1
+                                                              }. ${
+            question.question
+          }</p>
+                                                              <div class="options">
+                                                                ${optionsHTML}
+                                                              </div>
+                                                              ${explanationHTML}
+                                                            `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
